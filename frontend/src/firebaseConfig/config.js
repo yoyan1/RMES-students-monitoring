@@ -5,13 +5,12 @@ import { getStorage } from 'firebase/storage'
 
 export const firebaseApp = initializeApp({
   // your application settings
-  apiKey: "AIzaSyANm3upeIbvRZ2sEOfUQjt9iSTGgR2jnHg",
-  authDomain: "rmes-monitoring-system.firebaseapp.com",
-  projectId: "rmes-monitoring-system",
-  storageBucket: "rmes-monitoring-system.appspot.com",
-  messagingSenderId: "610369031733",
-  appId: "1:610369031733:web:57a4a5ece2c9fa3c982b7c",
-  measurementId: "G-BRZNQNTLP1"
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID
 })
 
 // used for the firestore refs
