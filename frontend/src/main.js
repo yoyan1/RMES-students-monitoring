@@ -7,6 +7,9 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import PrimeVue from 'primevue/config';
+import { VueFire, VueFireAuth } from 'vuefire';
+import { firebaseApp } from './firebaseConfig/config';
+
 import Aura from './presets/Aura';
 import ToastService from 'primevue/toastservice';
 
@@ -67,4 +70,12 @@ app.component('PanelMenu', PanelMenu)
 app.component('Menu', Menu)
 
 app.use(ToastService);
+app.use(VueFire, {
+    // imported above but could also just be created here
+    firebaseApp,
+    modules: [
+      // we will see other modules later on
+      VueFireAuth(),
+    ],
+  })
 app.mount('#app')

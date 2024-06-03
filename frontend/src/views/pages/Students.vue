@@ -1,0 +1,228 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import AddStudentModal from '@/studentComponents/AddOrUpdate.vue';
+import ConfirmPop from '@/studentComponents/ConfirmationPop.vue';
+import PreviewStudent from '@/studentComponents/PreviewStudent.vue';
+import {students, studentsRecord } from '@/stores/fetch.js';
+import { getCurrentDate } from '@/stores/getDateAndTime';
+import { useCurrentUser } from 'vuefire'
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebaseConfig/config';
+import { token } from '@/firebaseConfig/messaging';
+import loader from '@/components/loader.vue';
+
+const authUser = ref({})
+const user = useCurrentUser()
+const isLoading = ref(false);
+
+onMounted(async ()=>{
+    try{
+        isLoading.value= true
+        const adminRef = doc(db, 'admin_info', user.value.uid)
+        const docAdmin = await getDoc(adminRef);
+        authUser.value = {...authUser.value, ... docAdmin.data()}
+        isLoading.value = false
+    } catch(error){
+        console.error(error);
+    }
+})
+
+const {timeString} = getCurrentDate()
+const searchInput = ref('')//search input name and lrn
+const filterLevel = ref('')//filter grade level
+
+// Define a computed property to filter students based on search query
+const filteredStudents = computed(() => {
+    const search = searchInput.value.toLowerCase()
+    const level = filterLevel.value
+
+    return students.value.filter(student => {
+        const fullNameMatches = student.fullname.toLowerCase().includes(search)
+        const newLRN = student.lrn + ""
+        const lrnMatches = newLRN.includes(search)
+        const levelMatches = student.level == level
+
+        if (search && level) {
+            return (fullNameMatches || lrnMatches) && levelMatches
+        } else if (level) {
+            return levelMatches
+        } else if (search) {
+            return fullNameMatches || lrnMatches
+        } else {
+            return true
+        }
+    })
+})
+
+function calculateAge(birthDate) {
+    var today = new Date();
+    var birthDate = new Date(birthDate);
+    var age = today.getFullYear() - birthDate.getFullYear();
+    var m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+</script>
+<template>  
+    <!-- <section class="bg-gray-50 dark:bg-gray-900  antialiased"> -->
+        <div class="mx-auto">
+            <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
+                    <div class="">
+                        <h5 class="text-base ">
+                            <span class="text-gray-500">All Students:</span>
+                            <span class="dark:text-white">{{ studentsRecord.length }}</span>
+                        </h5>
+                        <h5 class="text-base text-gray-500 dark:text-gray-400">1-10 (100)</h5>
+                    </div>
+                    <div class="flex-shrink-0 flex flex-col items-start md:flex-row md:items-center lg:justify-end space-y-3 md:space-y-0 md:space-x-3">
+                        <button type="button" class="flex-shrink-0 inline-flex items-center justify-center py-2 px-3 text-xs font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                            <svg class="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v13m0-13 4 4m-4-4-4 4"/>
+                            </svg>
+                            Export
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row items-stretch md:items-center md:space-x-3 space-y-3 md:space-y-0 justify-between mx-4 py-4 border-t dark:border-gray-700">
+                    <div class="w-full md:w-1/2">
+                        <form class="flex items-center">
+                            <label for="simple-search" class="sr-only">Search</label>
+                            <div class="relative w-full">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" />
+                                    </svg>
+                                </div>
+                                <input v-model="searchInput" type="text" id="simple-search" placeholder="Search name or LRN" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-5000">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
+                        <AddStudentModal :isNew="true" :staffId="user.uid" v-if="authUser.role == 'staff'"/>
+                        <select v-model="filterLevel" id="countries" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 ">
+                           <option value="">All</option>
+                           <option value="I">Grade I</option>
+                           <option value="II">Grade II</option>
+                           <option value="III">Grade III</option>
+                           <option value="IV">Grade IV</option>
+                           <option value="V">Grade V</option>
+                           <option value="VI">Grade VI</option>
+                         </select>
+                        <div class="flex items-center space-x-3 w-full md:w-auto">
+                            <button  class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-red-600 focus:outline-none bg-white rounded-lg border border-red-600 hover:bg-gray-100 hover:text-red-700 focus:z-10 focus:ring-4 focus:ring-red-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white hover:bg-red-200" type="button">
+                                Delete all
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                            <tr>
+                                <th scope="col" class="p-4">Name</th>
+                                <th scope="col" class="p-4">LRN</th>
+                                <th scope="col" class="p-4">Level</th>
+                                <th scope="col" class="p-4">Age</th>
+                                <th scope="col" class="p-4">Gender</th>
+                                <th scope="col" class="p-4">Status</th>
+                                <th scope="col" class="p-4">Last Update</th>
+                                <th scope="col" class="p-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody v-if="filteredStudents.length > 0">
+                            <tr v-for="student in filteredStudents" :key="student.id" class="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" >
+                                <th class="text-base px-4 py-3 font-medium text-gray-900  dark:text-white">
+                                    <div class="flex items-center mr-3">
+                                        <img :src="student.imageUrl"  class="h-10 w-10 mr-3 rounded-full" v-if="student.imageUrl">
+                                        <img src="@/components/images/default.jpg"  class="h-10 w-10 mr-3 rounded-full" v-else>
+                                       {{ student.fullname }}
+                                    </div>
+                                </th>
+                                <td class="text-base  px-3 py-3 font-medium text-gray-900  dark:text-gray-400">{{ student.lrn }}</td>
+                                <td class="px-3 py-3">
+                                    <span class="text-base  bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">Grade {{ student.level }}</span>
+                                </td>
+                                <td class="text-base  px-4 py-3 font-medium text-gray-900  dark:text-white">{{ calculateAge(student.date_of_birth) }}</td>
+                                <td class="text-base  px-4 py-3 font-medium text-gray-900  dark:text-white">{{ student.gender }}</td>
+                                <td class="text-base   px-4 py-3 font-medium text-gray-900  dark:text-white">
+                                    <div class="flex items-center">
+                                        <div class="h-4 w-4 rounded-full inline-block mr-2 " :class="student.status == 'Present'? 'bg-green-700' : 'bg-red-700'"></div>
+                                        {{ student.status }}
+                                    </div>
+                                    <!-- <div class="flex items-center" v-else-if="status.studentId = student.id">
+                                        <div class="h-4 w-4 rounded-full inline-block mr-2 " :class="status.attendance == 'present'? 'bg-green-700' : 'bg-red-700'"></div>
+                                        {{ status.attendance }}
+                                    </div> -->
+
+                                </td>
+                                <td class="text-base  px-4 py-3 font-medium text-gray-900  dark:text-white">just now</td>
+                                <td class="px-4 py-3 font-medium text-gray-900  dark:text-white">
+                                    <div class="flex items-center space-x-4">
+                                        <AddStudentModal :isNew="false" :studentData="student" v-if="authUser.role == 'staff'"/>
+                                        <PreviewStudent :id="student.id" :studentData="student" :role="authUser.role"></PreviewStudent>
+                                        <ConfirmPop :id="student.id" v-if="authUser.role == 'staff'"/>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tbody v-else-if="isLoading">
+                            <tr>
+                                <td colspan="8" class="text-center text-xl  px-4 py-3 font-medium text-gray-900  dark:text-white"><loader/></td>
+                            </tr>
+                        </tbody>
+                        <tbody v-else>
+                            
+                            <tr>
+                                <td colspan="8" class="text-center text-xl  px-4 py-3 font-medium text-gray-900  dark:text-white">no match found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <nav class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4" aria-label="Table navigation">
+                    <span class="text-base font-normal text-gray-500 dark:text-gray-400">
+                        Showing
+                        <span class="text-base font-semibold text-gray-900 dark:text-white">1-10</span>
+                        of
+                        <span class="text-base font-semibold text-gray-900 dark:text-white">1000</span>
+                    </span>
+                    <ul class="inline-flex items-stretch -space-x-px">
+                        <li>
+                            <a href="#" class="flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                                <span class="sr-only">Previous</span>
+                                <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">1</a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">2</a>
+                        </li>
+                        <li>
+                            <a href="#" aria-current="page" class="flex items-center justify-center text-sm z-10 py-2 px-3 leading-tight text-blue-600 bg-blue-50 border border-blue-300 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white">3</a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">...</a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">100</a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+                                <span class="sr-only">Next</span>
+                                <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    <!-- </section> -->
+</template>

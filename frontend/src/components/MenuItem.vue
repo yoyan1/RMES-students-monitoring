@@ -26,21 +26,40 @@ const router = useRouter();
 
 const items = ref([
     {
-        label: 'Router Link',
-        icon: 'pi pi-palette',
-        route: '/dashboard'
+        label: 'Home',
+        items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/home/overview' }]
     },
     {
-        label: 'Programmatic',
-        icon: 'pi pi-link',
-        command: () => {
-            this.$router.push('/overview');
-        }
+        label: 'Pages',
+        icon: 'pi pi-fw pi-briefcase',
+        to: '/pages',
+        items: [
+            {
+                label: 'Students',
+                icon: 'pi pi-fw pi-server',
+                to: '/pages/students'
+            },
+            {
+                label: 'Attendance',
+                icon: 'pi pi-fw pi-calendar',
+                to: '/pages/attendance'
+            },
+            {
+                label: 'Request',
+                icon: 'pi pi-fw pi-inbox',
+                to: '/pages/request'
+            },
+            {
+                label: 'Accounts',
+                icon: 'pi pi-fw pi-users',
+                to: '/pages/accounts'
+            },
+            {
+                label: 'Setting',
+                icon: 'pi pi-fw pi-cog',
+                to: '/pages/setting'
+            }
+        ]
     },
-    {
-        label: 'External',
-        icon: 'pi pi-home',
-        url: 'https://vuejs.org/'
-    }
 ]);
 </script>
