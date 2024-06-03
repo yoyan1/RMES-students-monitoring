@@ -4,15 +4,15 @@
         <Menu :model="items">
             <template #item="{ item, props }">
                 <router-link v-if="item.route" v-slot="{ href, navigate }" :to="item.route" custom>
-                    <a v-ripple :href="href" v-bind="props.action" @click="navigate" class="font-bold">
+                    <a v-ripple :href="href" v-bind="props.action" @click="navigate" class="font-bold hover:text-white">
                         <span :class="item.icon" />
                         <span class="ml-2">{{ item.label }}</span>
                     </a>
                 </router-link>
-                <a v-else v-ripple :href="item.url" :target="item.target" v-bind="props.action" class="font-semibold">
+                <RouterLink v-else v-ripple :to="item.to" :target="item.target" v-bind="props.action" class="font-semibold hover:text-white">
                     <span :class="item.icon" />
                     <span class="ml-2">{{ item.label }}</span>
-                </a>
+                </RouterLink>
             </template>
         </Menu>
     </div>
@@ -20,7 +20,7 @@
 
 <script setup>
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, RouterLink } from "vue-router";
 
 const router = useRouter();
 

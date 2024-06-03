@@ -36,6 +36,7 @@ import InputMask from 'primevue/inputmask';
 import FileUpload from 'primevue/fileupload';
 import PanelMenu from 'primevue/panelmenu';
 import Menu from 'primevue/menu';
+import Password from 'primevue/password';
 
 const app = createApp(App);
 
@@ -68,6 +69,7 @@ app.component('Dialog', Dialog)
 app.component('FileUpload', FileUpload)
 app.component('PanelMenu', PanelMenu)
 app.component('Menu', Menu)
+app.component('Password', Password)
 
 app.use(ToastService);
 app.use(VueFire, {

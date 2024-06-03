@@ -1,6 +1,6 @@
 export default {
     panel: {
-        class: 'p-1 overflow-hidden mb-3'
+        class: 'p-1 overflow-hidden mb-3 border border-surface-200 dark:border-surface-700 rounded-md'
     },
     header: {
         class: ['rounded-[4px]', 'outline-none']
